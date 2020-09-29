@@ -24,11 +24,11 @@ module Program =
 
     type Infra =
         {
-            window : Sdl2.Sdl2Window;
-            gui : ImGuiRenderer;
-            cl : CommandList;
-            gd : GraphicsDevice;
-            sw : Stopwatch;
+            Window: Sdl2.Sdl2Window
+            Gui: ImGuiRenderer
+            CommandList: CommandList
+            GraphicsDevice: GraphicsDevice
+            StopWatch: Stopwatch
         }
 
     type State =
@@ -38,11 +38,11 @@ module Program =
         }
 
     let drawFrame (infrastructure:Infra) isClicked elapsedTime =
-        let events = infrastructure.window.PumpEvents()
+        let events = infrastructure.Window.PumpEvents()
         let frameRate = 1000000.0f / float32 elapsedTime
-        infrastructure.gui.Update(float32 elapsedTime, events)
-        ImGui.SetNextWindowSize(Vector2(float32 (infrastructure.window.Width), float32 infrastructure.window.Height * 0.25f))
-        ImGui.SetNextWindowPos(Vector2(float32 0, float32 infrastructure.window.Height * 0.75f), ImGuiCond.Always)
+        infrastructure.Gui.Update(float32 elapsedTime, events)
+        ImGui.SetNextWindowSize(Vector2(float32 (infrastructure.Window.Width), float32 infrastructure.Window.Height * 0.25f))
+        ImGui.SetNextWindowPos(Vector2(float32 0, float32 infrastructure.Window.Height * 0.75f), ImGuiCond.Always)
 
         ImGui.Begin(
             "main",
@@ -69,27 +69,28 @@ module Program =
         let isJustClicked = ImGui.IsItemClicked ImGuiMouseButton.Left
         ImGui.End()
 
-        infrastructure.cl.Begin()
-        infrastructure.cl.SetFramebuffer(infrastructure.gd.MainSwapchain.Framebuffer)
+        infrastructure.CommandList.Begin()
+        infrastructure.CommandList.SetFramebuffer(infrastructure.GraphicsDevice.MainSwapchain.Framebuffer)
 
         if ImGui.GetIO().WantCaptureMouse
-        then infrastructure.cl.ClearColorTarget(uint32 0, RgbaFloat.Black)
-        else infrastructure.cl.ClearColorTarget(uint32 0, RgbaFloat.CornflowerBlue)
+        then infrastructure.CommandList.ClearColorTarget(uint32 0, RgbaFloat.Black)
+        else infrastructure.CommandList.ClearColorTarget(uint32 0, RgbaFloat.CornflowerBlue)
 
-        infrastructure.gui.Render (infrastructure.gd, infrastructure.cl)
-        infrastructure.cl.End()
+        infrastructure.Gui.Render (infrastructure.GraphicsDevice, infrastructure.CommandList)
 
-        infrastructure.gd.SubmitCommands infrastructure.cl
-        infrastructure.gd.SwapBuffers()
+        infrastructure.CommandList.End()
+
+        infrastructure.GraphicsDevice.SubmitCommands infrastructure.CommandList
+        infrastructure.GraphicsDevice.SwapBuffers()
         isJustClicked
 
 
     let rec drawFrameOrExit infrastructure state =
-        if not infrastructure.window.Exists
+        if not infrastructure.Window.Exists
         then 1
         else
             // actual drawing code
-            let currentFrame = infrastructure.sw.ElapsedTicks
+            let currentFrame = infrastructure.StopWatch.ElapsedTicks
             let elapsedTime = currentFrame - state.lastFrame
 
             let isJustClicked = drawFrame infrastructure state.isClicked elapsedTime
@@ -127,11 +128,11 @@ module Program =
         let cl = gd.ResourceFactory.CreateCommandList()
         let infra =
             {
-                Infra.cl = cl
-                Infra.gd = gd
-                Infra.gui = gui
-                Infra.sw = sw
-                Infra.window = window
+                Infra.CommandList = cl
+                Infra.GraphicsDevice = gd
+                Infra.Gui = gui
+                Infra.StopWatch = sw
+                Infra.Window = window
             }
         let state =
             {
